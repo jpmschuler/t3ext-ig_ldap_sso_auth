@@ -14,6 +14,8 @@
 
 namespace Causal\IgLdapSsoAuth\Service;
 
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Causal\IgLdapSsoAuth\Exception\UnsupportedLoginSecurityLevelException;
 use Causal\IgLdapSsoAuth\Exception\UnresolvedPhpDependencyException;
@@ -31,7 +33,6 @@ use Causal\IgLdapSsoAuth\Utility\NotificationUtility;
  */
 class AuthenticationService extends \TYPO3\CMS\Core\Authentication\AuthenticationService
 {
-
     /**
      * 200 - authenticated and no more checking needed
      */
@@ -67,9 +68,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     }
 
     /**
-     * Find a user (eg. look up the user record in database when a login is sent)
+     * Finda a user (e.g., look up the user record in database when a login is sent).
      *
-     * @return mixed user array or false
+     * @return array|bool User array or false
      * @throws UnsupportedLoginSecurityLevelException
      */
     public function getUser()
@@ -93,7 +94,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $configurationRepository = GeneralUtility::makeInstance(\Causal\IgLdapSsoAuth\Domain\Repository\ConfigurationRepository::class);
         $configurationRecords = $configurationRepository->findAll();
 
-        if (count($configurationRecords) === 0) {
+        if (empty($configurationRecords)) {
             // Early return since LDAP is not configured
             static::getLogger()->warning('Skipping LDAP authentication as extension is not yet configured');
             return false;
@@ -264,9 +265,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * Returns the remote user ($_SERVER['REMOTE_USER']).
      *
-     * @return string
+     * @return string|null
      */
-    protected function getRemoteUser()
+    protected function getRemoteUser(): ?string
     {
         $remoteUser = !empty($_SERVER['REMOTE_USER'])
             ? $_SERVER['REMOTE_USER']
@@ -283,16 +284,15 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * Returns a logger.
      *
-     * @return \TYPO3\CMS\Core\Log\Logger
+     * @return LoggerInterface
      */
-    protected static function getLogger()
+    protected static function getLogger(): LoggerInterface
     {
         /** @var \TYPO3\CMS\Core\Log\Logger $logger */
         static $logger = null;
         if ($logger === null) {
-            $logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
+            $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
         }
         return $logger;
     }
-
 }

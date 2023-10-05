@@ -32,7 +32,6 @@ use Causal\IgLdapSsoAuth\Utility\NotificationUtility;
  */
 class Typo3UserRepository
 {
-
     /**
      * Creates a fresh BE/FE user record.
      *
@@ -40,7 +39,7 @@ class Typo3UserRepository
      * @return array
      * @throws InvalidUserTableException
      */
-    public static function create($table)
+    public static function create(string $table): array
     {
         if (!GeneralUtility::inList('be_users,fe_users', $table)) {
             throw new InvalidUserTableException('Invalid table "' . $table . '"', 1404891582);
@@ -87,7 +86,13 @@ class Typo3UserRepository
      * @return array Array of user records
      * @throws InvalidUserTableException
      */
-    public static function fetch(string $table, int $uid = 0, ?int $pid = null, ?string $username = null, ?string $dn = null): array
+    public static function fetch(
+        string $table,
+        int $uid = 0,
+        ?int $pid = null,
+        ?string $username = null,
+        ?string $dn = null
+    ): array
     {
         if (!GeneralUtility::inList('be_users,fe_users', $table)) {
             throw new InvalidUserTableException('Invalid table "' . $table . '"', 1404891636);
@@ -108,7 +113,7 @@ class Typo3UserRepository
                     $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
                 )
                 ->execute()
-                ->fetchAll();
+                ->fetchAllAssociative();
         } elseif (!empty($dn)) {
             // Search with DN (or fall back to username) and pid
             $where = $queryBuilder->expr()->eq('tx_igldapssoauth_dn', $queryBuilder->createNamedParameter($dn, \PDO::PARAM_STR));
@@ -134,7 +139,7 @@ class Typo3UserRepository
                 ->orderBy('tx_igldapssoauth_dn', 'DESC')    // rows from LDAP first...
                 ->addOrderBy('deleted', 'ASC')              // ... then privilege active records
                 ->execute()
-                ->fetchAll();
+                ->fetchAllAssociative();
         } elseif (!empty($username)) {
             // Search with username and pid
             $where = $queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($username, \PDO::PARAM_STR));
@@ -149,7 +154,7 @@ class Typo3UserRepository
                 ->from($table)
                 ->where($where)
                 ->execute()
-                ->fetchAll();
+                ->fetchAllAssociative();
         }
 
         // Return TYPO3 users
@@ -165,7 +170,7 @@ class Typo3UserRepository
      * @return array The new record
      * @throws InvalidUserTableException
      */
-    public static function add(string $table, array $data = [])
+    public static function add(string $table, array $data = []): array
     {
         if (!GeneralUtility::inList('be_users,fe_users', $table)) {
             throw new InvalidUserTableException('Invalid table "' . $table . '"', 1404891712);
@@ -192,7 +197,7 @@ class Typo3UserRepository
                 $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
             )
             ->execute()
-            ->fetch();
+            ->fetchAssociative();
 
         NotificationUtility::dispatch(
             __CLASS__,
@@ -214,7 +219,7 @@ class Typo3UserRepository
      * @return bool true on success, otherwise false
      * @throws InvalidUserTableException
      */
-    public static function update(string $table, array $data = [])
+    public static function update(string $table, array $data = []): bool
     {
         if (!GeneralUtility::inList('be_users,fe_users', $table)) {
             throw new InvalidUserTableException('Invalid table "' . $table . '"', 1404891732);
@@ -399,7 +404,7 @@ class Typo3UserRepository
                         $queryBuilder->expr()->eq('tx_igldapssoauth_dn', $queryBuilder->createNamedParameter('', \PDO::PARAM_STR))
                     )
                     ->execute()
-                    ->fetchAll();
+                    ->fetchAllAssociative();
                 foreach ($rows as $row) {
                     $localUserGroups[] = $row['uid'];
                 }
@@ -414,7 +419,7 @@ class Typo3UserRepository
 
         /** @var \TYPO3\CMS\Extbase\Domain\Model\BackendUserGroup[]|\TYPO3\CMS\Extbase\Domain\Model\FrontendUserGroup[] $administratorGroups */
         $administratorGroups = Configuration::getValue('updateAdminAttribForGroups');
-        if (count($administratorGroups) > 0) {
+        if (!empty($administratorGroups)) {
             $typo3User['admin'] = 0;
             foreach ($administratorGroups as $administratorGroup) {
                 if (in_array($administratorGroup->getUid(), $groupUid)) {
@@ -460,5 +465,4 @@ class Typo3UserRepository
         $password = $instance ? $instance->getHashedPassword($password) : md5($password);
         return $password;
     }
-
 }

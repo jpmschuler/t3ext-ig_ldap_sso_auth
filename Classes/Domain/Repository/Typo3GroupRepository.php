@@ -29,7 +29,6 @@ use Causal\IgLdapSsoAuth\Utility\NotificationUtility;
  */
 class Typo3GroupRepository
 {
-
     /**
      * Creates a fresh BE/FE group record.
      *
@@ -37,7 +36,7 @@ class Typo3GroupRepository
      * @return array
      * @throws InvalidUserGroupTableException
      */
-    public static function create($table)
+    public static function create(string $table): array
     {
         if (!GeneralUtility::inList('be_groups,fe_groups', $table)) {
             throw new InvalidUserGroupTableException('Invalid table "' . $table . '"', 1404892331);
@@ -70,7 +69,13 @@ class Typo3GroupRepository
      * @param string $groupName
      * @return null
      */
-    public static function fetch(string $table, int $uid = 0, ?int $pid = null, ?string $dn = null, ?string $groupName = null): array
+    public static function fetch(
+        string $table,
+        int $uid = 0,
+        ?int $pid = null,
+        ?string $dn = null,
+        ?string $groupName = null
+    ): array
     {
         if (!GeneralUtility::inList('be_groups,fe_groups', $table)) {
             throw new InvalidUserGroupTableException('Invalid table "' . $table . '"', 1404891809);
@@ -103,7 +108,7 @@ class Typo3GroupRepository
             ->from($table)
             ->where($where)
             ->execute()
-            ->fetchAll();
+            ->fetchAllAssociative();
 
         // Return TYPO3 groups
         return $groups;
@@ -118,7 +123,7 @@ class Typo3GroupRepository
      * @return array The new record
      * @throws InvalidUserGroupTableException
      */
-    public static function add($table, array $data = [])
+    public static function add(string $table, array $data = []): array
     {
         if (!GeneralUtility::inList('be_groups,fe_groups', $table)) {
             throw new InvalidUserGroupTableException('Invalid table "' . $table . '"', 1404891833);
@@ -140,7 +145,7 @@ class Typo3GroupRepository
                     'uid' => (int)$uid,
                 ]
             )
-            ->fetch();
+            ->fetchAssociative();
 
         NotificationUtility::dispatch(
             __CLASS__,
@@ -162,7 +167,7 @@ class Typo3GroupRepository
      * @return bool true on success, otherwise false
      * @throws InvalidUserGroupTableException
      */
-    public static function update($table, array $data = [])
+    public static function update(string $table, array $data = []): bool
     {
         if (!GeneralUtility::inList('be_groups,fe_groups', $table)) {
             throw new InvalidUserGroupTableException('Invalid table "' . $table . '"', 1404891867);
@@ -192,5 +197,4 @@ class Typo3GroupRepository
 
         return $success;
     }
-
 }
